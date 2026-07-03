@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: pages-${{ github.repository }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -62,3 +62,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          timeout: 1800000
+          error_count: 60
+          reporting_interval: 10000
