@@ -19,7 +19,7 @@ class FirestoreService {
 
   // --- Uygulama kilidi (Firebase Console'dan yönetilir) ---
   static const String licenseCollection = 'app_config';
-  static const String licenseDocId = 'license';
+  static const List<String> licenseDocIds = ['license', 'licence'];
 
   Future<bool> fetchLicenseFromServer() async {
     final status = await checkLicense();
@@ -27,32 +27,57 @@ class FirestoreService {
   }
 
   Future<LicenseStatus> checkLicense() async {
-    final docRef = _db.collection(licenseCollection).doc(licenseDocId);
     String? serverError;
 
-    try {
-      final serverSnap = await docRef
-          .get(const GetOptions(source: Source.server))
-          .timeout(const Duration(seconds: 15));
-      return _statusFromSnap(serverSnap, source: 'server');
-    } catch (e) {
-      serverError = e.toString();
+    for (final docId in licenseDocIds) {
+      try {
+        final snap = await _db
+            .collection(licenseCollection)
+            .doc(docId)
+            .get(const GetOptions(source: Source.server))
+            .timeout(const Duration(seconds: 15));
+        if (snap.exists) {
+          return _statusFromSnap(
+            snap,
+            source: 'server',
+            path: '$licenseCollection/$docId',
+          );
+        }
+      } catch (e) {
+        serverError = e.toString();
+      }
     }
 
-    try {
-      final cacheSnap = await docRef.get(const GetOptions(source: Source.cache));
-      return _statusFromSnap(cacheSnap, source: 'cache', error: serverError);
-    } catch (e) {
-      return LicenseStatus(
-        enabled: false,
-        error: serverError ?? e.toString(),
-      );
+    for (final docId in licenseDocIds) {
+      try {
+        final snap = await _db
+            .collection(licenseCollection)
+            .doc(docId)
+            .get(const GetOptions(source: Source.cache));
+        if (snap.exists) {
+          return _statusFromSnap(
+            snap,
+            source: 'cache',
+            path: '$licenseCollection/$docId',
+            error: serverError,
+          );
+        }
+      } catch (e) {
+        serverError = serverError ?? e.toString();
+      }
     }
+
+    return LicenseStatus(
+      enabled: false,
+      error: serverError,
+      path: '$licenseCollection/${licenseDocIds.first}',
+    );
   }
 
   LicenseStatus _statusFromSnap(
     DocumentSnapshot<Map<String, dynamic>> snap, {
     required String source,
+    required String path,
     String? error,
   }) {
     final data = snap.data();
@@ -65,32 +90,39 @@ class FirestoreService {
       rawAktif: raw?.toString(),
       source: source,
       error: error,
+      path: path,
     );
   }
 
   Stream<bool> watchAppLicenseEnabled() {
-    final docRef = _db.collection(licenseCollection).doc(licenseDocId);
-    StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? sub;
     final controller = StreamController<bool>();
+    final subscriptions = <StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>>[];
 
     Future<void> start() async {
       final status = await checkLicense();
       if (!controller.isClosed) controller.add(status.enabled);
 
-      sub = docRef.snapshots().listen(
-        (snap) {
-          if (!controller.isClosed) {
-            controller.add(_licenseEnabledFromSnap(snap));
-          }
-        },
-        onError: (_) {
-          if (!controller.isClosed) controller.add(false);
-        },
-      );
+      for (final docId in licenseDocIds) {
+        final sub = _db.collection(licenseCollection).doc(docId).snapshots().listen(
+          (snap) {
+            if (snap.exists && !controller.isClosed) {
+              controller.add(_licenseEnabledFromSnap(snap));
+            }
+          },
+          onError: (_) {
+            if (!controller.isClosed) controller.add(false);
+          },
+        );
+        subscriptions.add(sub);
+      }
     }
 
     start();
-    controller.onCancel = () => sub?.cancel();
+    controller.onCancel = () {
+      for (final sub in subscriptions) {
+        sub.cancel();
+      }
+    };
     return controller.stream;
   }
 
