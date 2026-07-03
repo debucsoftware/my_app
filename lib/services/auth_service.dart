@@ -15,6 +15,8 @@ class AuthService {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
 
+  String _normalizeEmail(String email) => email.trim().toLowerCase();
+
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   User? get currentFirebaseUser => _auth.currentUser;
@@ -42,8 +44,9 @@ class AuthService {
   }
 
   Future<AppUser> signIn(String email, String password) async {
+    final normalized = _normalizeEmail(email);
     final credential = await _auth.signInWithEmailAndPassword(
-      email: email.trim(),
+      email: normalized,
       password: password,
     );
     final doc = await _firestore
@@ -75,7 +78,7 @@ class AuthService {
   Future<WorkerInvite?> getWorkerInvite(String email) async {
     final doc = await _firestore
         .collection('worker_invites')
-        .doc(emailDocId(email))
+        .doc(emailDocId(_normalizeEmail(email)))
         .get();
     if (!doc.exists) return null;
     return WorkerInvite.fromMap(doc.id, doc.data()!);
@@ -86,7 +89,7 @@ class AuthService {
     required String name,
     String? teamId,
   }) async {
-    final normalized = email.trim().toLowerCase();
+    final normalized = _normalizeEmail(email);
     final existing = await _firestore
         .collection('users')
         .where('email', isEqualTo: normalized)
@@ -111,7 +114,7 @@ class AuthService {
     await _firestore.collection('worker_invites').doc(emailDocId(normalized)).set({
       'email': normalized,
       'name': name,
-      'teamId': teamId,
+      if (teamId != null) 'teamId': teamId,
       'active': true,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -121,11 +124,12 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final invite = await getWorkerInvite(email);
+    final normalized = _normalizeEmail(email);
+    final invite = await getWorkerInvite(normalized);
     if (invite == null) {
       throw FirebaseAuthException(
         code: 'invite-not-found',
-        message: 'Bu e-posta için davet bulunamadı.',
+        message: 'Bu e-posta için davet bulunamadı. Zaten kayıtlıysanız giriş yapın.',
       );
     }
     if (!invite.active) {
@@ -134,33 +138,45 @@ class AuthService {
         message: 'Hesabınız pasif durumda.',
       );
     }
+
     final credential = await _auth.createUserWithEmailAndPassword(
       email: invite.email,
       password: password,
     );
-    final appUser = AppUser(
-      id: credential.user!.uid,
+
+    final uid = credential.user!.uid;
+    final userData = <String, dynamic>{
+      'email': invite.email,
+      'name': invite.name,
+      'role': UserRole.worker.name,
+      'active': true,
+      'createdAt': FieldValue.serverTimestamp(),
+      if (invite.teamId != null) 'teamId': invite.teamId,
+    };
+    await _firestore.collection('users').doc(uid).set(userData);
+
+    try {
+      await _firestore
+          .collection('worker_invites')
+          .doc(emailDocId(invite.email))
+          .delete();
+    } catch (_) {
+      // Profil oluştu, davet silinemese de giriş devam etsin.
+    }
+
+    return AppUser(
+      id: uid,
       email: invite.email,
       name: invite.name,
       role: UserRole.worker,
       teamId: invite.teamId,
-      createdAt: DateTime.now(),
     );
-    await _firestore.collection('users').doc(appUser.id).set({
-      ...appUser.toMap(),
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    await _firestore
-        .collection('worker_invites')
-        .doc(emailDocId(invite.email))
-        .delete();
-    return appUser;
   }
 
   Future<void> deleteWorkerInvite(String email) {
     return _firestore
         .collection('worker_invites')
-        .doc(emailDocId(email))
+        .doc(emailDocId(_normalizeEmail(email)))
         .delete();
   }
 
@@ -169,4 +185,20 @@ class AuthService {
       'fcmToken': token,
     });
   }
+}
+
+String authErrorMessage(Object error) {
+  if (error is FirebaseAuthException) {
+    return switch (error.code) {
+      'user-not-found' => 'Kullanıcı bulunamadı.',
+      'wrong-password' => 'Şifre hatalı.',
+      'email-already-in-use' => 'Bu e-posta zaten kullanılıyor. Giriş yapın.',
+      'invalid-email' => 'Geçersiz e-posta adresi.',
+      'weak-password' => 'Şifre en az 6 karakter olmalı.',
+      'invite-not-found' => error.message ?? 'Davet bulunamadı. Giriş yapmayı deneyin.',
+      'unauthorized-domain' => 'Bu site Firebase için yetkili değil. debucsoftware.github.io eklenmeli.',
+      _ => error.message ?? error.code,
+    };
+  }
+  return error.toString();
 }

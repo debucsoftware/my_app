@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _workerStep = invite != null ? _WorkerStep.setup : _WorkerStep.login;
       });
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = authErrorMessage(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -79,6 +79,9 @@ class _LoginScreenState extends State<LoginScreen> {
           email: _emailController.text,
           password: _passwordController.text,
         );
+        if (mounted) {
+          setState(() => _workerStep = _WorkerStep.login);
+        }
       } else {
         await _authService.signIn(
           _emailController.text,
@@ -86,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = authErrorMessage(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
