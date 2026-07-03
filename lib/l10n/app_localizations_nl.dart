@@ -150,6 +150,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get assignWorkers => 'Werknemer toewijzen';
 
   @override
+  String get assignedTo => 'Toegewezen aan';
+
+  @override
   String get priority => 'Prioriteit';
 
   @override

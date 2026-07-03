@@ -380,6 +380,12 @@ abstract class AppLocalizations {
   /// **'İşçi Ata'**
   String get assignWorkers;
 
+  /// No description provided for @assignedTo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Atanan'**
+  String get assignedTo;
+
   /// No description provided for @priority.
   ///
   /// In tr, this message translates to:

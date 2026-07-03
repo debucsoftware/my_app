@@ -47,6 +47,7 @@
   "addPhoto": "Foto toevoegen",
   "newTask": "Nieuwe taak",
   "assignWorkers": "Werknemer toewijzen",
+  "assignedTo": "Toegewezen aan",
   "priority": "Prioriteit",
   "dueDate": "Datum",
   "description": "Beschrijving",

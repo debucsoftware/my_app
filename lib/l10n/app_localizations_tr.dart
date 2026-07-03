@@ -150,6 +150,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get assignWorkers => 'İşçi Ata';
 
   @override
+  String get assignedTo => 'Atanan';
+
+  @override
   String get priority => 'Öncelik';
 
   @override

@@ -10,16 +10,6 @@ import 'package:istakibim/services/auth_service.dart';
 import 'package:istakibim/services/firestore_service.dart';
 import 'package:istakibim/widgets/language_selector.dart';
 
-DateTime _dateOnly(DateTime value) => DateTime(value.year, value.month, value.day);
-
-bool _isToday(DateTime value) => _dateOnly(value) == _dateOnly(DateTime.now());
-
-bool _isBeforeToday(DateTime value) =>
-    _dateOnly(value).isBefore(_dateOnly(DateTime.now()));
-
-bool _isAfterToday(DateTime value) =>
-    _dateOnly(value).isAfter(_dateOnly(DateTime.now()));
-
 bool _isOpenTask(WorkTask task) {
   return task.status != TaskStatus.completed &&
       task.status != TaskStatus.approved &&
@@ -67,44 +57,18 @@ class WorkerHomeScreen extends StatelessWidget {
           }
 
           final openTasks = taskSnap.data!.where(_isOpenTask).toList();
-          final overdueTasks = openTasks
-              .where((t) => t.dueDate != null && _isBeforeToday(t.dueDate!))
-              .toList();
-          final todayTasks = openTasks
-              .where((t) => t.dueDate == null || _isToday(t.dueDate!))
-              .toList();
-          final upcomingTasks = openTasks
-              .where((t) => t.dueDate != null && _isAfterToday(t.dueDate!))
-              .toList();
 
-          if (overdueTasks.isEmpty && todayTasks.isEmpty && upcomingTasks.isEmpty) {
+          if (openTasks.isEmpty) {
             return Center(child: Text(l10n.noAssignedTasks));
           }
 
-          return ListView(
+          return ListView.builder(
             padding: const EdgeInsets.all(16),
-            children: [
-              if (overdueTasks.isNotEmpty) ...[
-                _SectionTitle(title: l10n.overdueTasks),
-                ...overdueTasks.map(
-                  (task) => _WorkerTaskCard(task: task, user: user, highlight: true),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (todayTasks.isNotEmpty) ...[
-                _SectionTitle(title: l10n.todayTasks),
-                ...todayTasks.map(
-                  (task) => _WorkerTaskCard(task: task, user: user),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (upcomingTasks.isNotEmpty) ...[
-                _SectionTitle(title: l10n.upcomingTasks),
-                ...upcomingTasks.map(
-                  (task) => _WorkerTaskCard(task: task, user: user),
-                ),
-              ],
-            ],
+            itemCount: openTasks.length,
+            itemBuilder: (context, index) {
+              final task = openTasks[index];
+              return _WorkerTaskCard(task: task, user: user);
+            },
           );
         },
       ),
@@ -112,35 +76,11 @@ class WorkerHomeScreen extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-      ),
-    );
-  }
-}
-
 class _WorkerTaskCard extends StatelessWidget {
-  const _WorkerTaskCard({
-    required this.task,
-    required this.user,
-    this.highlight = false,
-  });
+  const _WorkerTaskCard({required this.task, required this.user});
 
   final WorkTask task;
   final AppUser user;
-  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +93,7 @@ class _WorkerTaskCard extends StatelessWidget {
         final project = snap.data?.$1;
         final unit = snap.data?.$2;
         return Card(
-          color: highlight ? Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.35) : null,
+          margin: const EdgeInsets.only(bottom: 12),
           child: InkWell(
             onTap: () => Navigator.push(
               context,

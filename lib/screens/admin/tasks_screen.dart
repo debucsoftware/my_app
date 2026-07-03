@@ -32,19 +32,46 @@ class TasksScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           final tasks = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: tasks.length,
-            itemBuilder: (context, index) {
-              final task = tasks[index];
-              final status = task.isOverdue ? TaskStatus.overdue : task.status;
-              return Card(
-                child: ListTile(
-                  title: Text(task.title),
-                  subtitle: Text(task.description ?? ''),
-                  trailing: StatusBadge(status: status),
-                  onTap: () => _showApprovalDialog(context, task),
-                ),
+          return StreamBuilder<List<AppUser>>(
+            stream: firestore.watchWorkers(),
+            builder: (context, workerSnap) {
+              final workerNames = {
+                for (final w in workerSnap.data ?? []) w.id: w.name,
+              };
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+                  final status = task.isOverdue ? TaskStatus.overdue : task.status;
+                  final assignees = task.assignedWorkerIds
+                      .map((id) => workerNames[id] ?? '?')
+                      .join(', ');
+                  return Card(
+                    child: ListTile(
+                      title: Text(task.title),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (task.description?.isNotEmpty == true)
+                            Text(task.description!),
+                          if (task.assignedWorkerIds.isNotEmpty)
+                            Text('${l10n.assignedTo}: $assignees'),
+                          if (task.assignedWorkerIds.isEmpty)
+                            Text(
+                              '${l10n.assignedTo}: -',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                        ],
+                      ),
+                      isThreeLine: true,
+                      trailing: StatusBadge(status: status),
+                      onTap: () => _showApprovalDialog(context, task),
+                    ),
+                  );
+                },
               );
             },
           );
@@ -159,11 +186,24 @@ class TasksScreen extends StatelessWidget {
                       }
                       final validSelection = selectedProject != null &&
                           projects.any((p) => p.id == selectedProject!.id);
+                      final dropdownValue = validSelection
+                          ? projects.firstWhere((p) => p.id == selectedProject!.id)
+                          : null;
                       return DropdownButtonFormField<Project>(
-                        value: validSelection ? selectedProject : null,
+                        value: dropdownValue,
+                        isExpanded: true,
+                        hint: Text(l10n.projectLabel),
                         decoration: InputDecoration(labelText: l10n.projectLabel),
                         items: projects
-                            .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))
+                            .map((p) => DropdownMenuItem(
+                                  value: p,
+                                  child: Text(
+                                    p.name,
+                                    style: TextStyle(
+                                      color: Theme.of(c).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ))
                             .toList(),
                         onChanged: (p) => setDialogState(() {
                           selectedProject = p;
@@ -194,11 +234,24 @@ class TasksScreen extends StatelessWidget {
                         }
                         final validUnit = selectedUnit != null &&
                             units.any((u) => u.id == selectedUnit!.id);
+                        final dropdownUnit = validUnit
+                            ? units.firstWhere((u) => u.id == selectedUnit!.id)
+                            : null;
                         return DropdownButtonFormField<Unit>(
-                          value: validUnit ? selectedUnit : null,
+                          value: dropdownUnit,
+                          isExpanded: true,
+                          hint: Text(l10n.units),
                           decoration: InputDecoration(labelText: l10n.units),
                           items: units
-                              .map((u) => DropdownMenuItem(value: u, child: Text(u.displayLabel)))
+                              .map((u) => DropdownMenuItem(
+                                    value: u,
+                                    child: Text(
+                                      u.displayLabel,
+                                      style: TextStyle(
+                                        color: Theme.of(c).colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ))
                               .toList(),
                           onChanged: (u) => setDialogState(() => selectedUnit = u),
                         );

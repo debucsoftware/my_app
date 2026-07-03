@@ -47,6 +47,7 @@
   "addPhoto": "Fotoğraf ekle",
   "newTask": "Yeni Görev",
   "assignWorkers": "İşçi Ata",
+  "assignedTo": "Atanan",
   "priority": "Öncelik",
   "dueDate": "Tarih",
   "description": "Açıklama",

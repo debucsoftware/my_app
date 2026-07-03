@@ -39,4 +39,11 @@ class Unit {
         'block': block,
         'createdAt': createdAt,
       };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Unit && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

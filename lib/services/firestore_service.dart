@@ -123,23 +123,37 @@ class FirestoreService {
 
   // --- Tasks ---
   Stream<List<WorkTask>> watchAllTasks() {
-    return _db
-        .collection('tasks')
-        .where('archived', isEqualTo: false)
-        .orderBy('dueDate')
-        .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => WorkTask.fromMap(d.id, d.data())).toList());
+    return _db.collection('tasks').snapshots().map((snap) {
+      final tasks = snap.docs
+          .map((d) => WorkTask.fromMap(d.id, d.data()))
+          .where((t) => !t.archived)
+          .toList();
+      tasks.sort((a, b) {
+        final aDate = a.dueDate ?? DateTime(2100);
+        final bDate = b.dueDate ?? DateTime(2100);
+        return aDate.compareTo(bDate);
+      });
+      return tasks;
+    });
   }
 
   Stream<List<WorkTask>> watchWorkerTasks(String workerId) {
     return _db
         .collection('tasks')
         .where('assignedWorkerIds', arrayContains: workerId)
-        .where('archived', isEqualTo: false)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => WorkTask.fromMap(d.id, d.data())).toList());
+        .map((snap) {
+      final tasks = snap.docs
+          .map((d) => WorkTask.fromMap(d.id, d.data()))
+          .where((t) => !t.archived)
+          .toList();
+      tasks.sort((a, b) {
+        final aDate = a.dueDate ?? DateTime(2100);
+        final bDate = b.dueDate ?? DateTime(2100);
+        return aDate.compareTo(bDate);
+      });
+      return tasks;
+    });
   }
 
   Stream<List<WorkTask>> watchArchivedTasks() {
@@ -155,6 +169,8 @@ class FirestoreService {
   Future<String> saveTask(WorkTask task) async {
     final data = {
       ...task.toMap(),
+      'assignedWorkerIds': task.assignedWorkerIds,
+      'archived': task.archived,
       'createdAt': task.createdAt ?? FieldValue.serverTimestamp(),
     };
     if (task.id.isEmpty) {
