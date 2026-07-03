@@ -153,7 +153,13 @@ class AuthService {
       'createdAt': FieldValue.serverTimestamp(),
       if (invite.teamId != null) 'teamId': invite.teamId,
     };
-    await _firestore.collection('users').doc(uid).set(userData);
+    try {
+      await _firestore.collection('users').doc(uid).set(userData);
+    } catch (e) {
+      await credential.user?.delete();
+      await _auth.signOut();
+      rethrow;
+    }
 
     try {
       await _firestore

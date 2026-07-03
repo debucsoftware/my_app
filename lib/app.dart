@@ -36,9 +36,14 @@ class IstakibimApp extends StatelessWidget {
   }
 }
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
 
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     final authService = AuthService();
@@ -62,12 +67,12 @@ class AuthGate extends StatelessWidget {
               .snapshots(),
           builder: (context, docSnapshot) {
             if (docSnapshot.connectionState == ConnectionState.waiting) {
-              return const _LoadingScaffold();
+              return const _LoadingScaffold(message: 'Profil yükleniyor...');
             }
 
             final doc = docSnapshot.data;
             if (doc == null || !doc.exists) {
-              return _ProfileMissingScreen(
+              return _WaitingForProfileScreen(
                 onSignOut: () => authService.signOut(),
               );
             }
@@ -93,13 +98,55 @@ class AuthGate extends StatelessWidget {
 }
 
 class _LoadingScaffold extends StatelessWidget {
-  const _LoadingScaffold();
+  const _LoadingScaffold({this.message});
+
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            if (message != null) ...[
+              const SizedBox(height: 16),
+              Text(message!),
+            ],
+          ],
+        ),
+      ),
     );
+  }
+}
+
+class _WaitingForProfileScreen extends StatefulWidget {
+  const _WaitingForProfileScreen({required this.onSignOut});
+
+  final VoidCallback onSignOut;
+
+  @override
+  State<_WaitingForProfileScreen> createState() => _WaitingForProfileScreenState();
+}
+
+class _WaitingForProfileScreenState extends State<_WaitingForProfileScreen> {
+  bool _timedOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(seconds: 8), () {
+      if (mounted) setState(() => _timedOut = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_timedOut) {
+      return const _LoadingScaffold(message: 'Hesap oluşturuluyor...');
+    }
+    return _ProfileMissingScreen(onSignOut: widget.onSignOut);
   }
 }
 

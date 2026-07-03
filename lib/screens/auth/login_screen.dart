@@ -79,9 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
           email: _emailController.text,
           password: _passwordController.text,
         );
-        if (mounted) {
-          setState(() => _workerStep = _WorkerStep.login);
-        }
       } else {
         await _authService.signIn(
           _emailController.text,
