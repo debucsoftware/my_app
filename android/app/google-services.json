@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "619653651663",
+    "project_id": "istakibim",
+    "storage_bucket": "istakibim.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:619653651663:android:dae97d0c1adb8b49f02bba",
+        "android_client_info": {
+          "package_name": "com.debuc.istakibim"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQn6fsp961xDvZdVTVd5i-qcs28Of9mCo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
