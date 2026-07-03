@@ -20,6 +20,18 @@ class FirestoreService {
   static const String licenseCollection = 'app_config';
   static const String licenseDocId = 'license';
 
+  Future<bool> fetchLicenseFromServer() async {
+    try {
+      final snap = await _db
+          .collection(licenseCollection)
+          .doc(licenseDocId)
+          .get(const GetOptions(source: Source.server));
+      return _licenseEnabledFromSnap(snap);
+    } catch (_) {
+      return false;
+    }
+  }
+
   Stream<bool> watchAppLicenseEnabled() {
     final docRef = _db.collection(licenseCollection).doc(licenseDocId);
     StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? sub;
@@ -54,10 +66,10 @@ class FirestoreService {
   }
 
   bool _licenseEnabledFromSnap(DocumentSnapshot<Map<String, dynamic>> snap) {
-    if (!snap.exists) return true;
+    if (!snap.exists) return false;
     final data = snap.data();
     if (data == null) return false;
-    final value = data['aktif'] ?? data['anahtar'];
+    final value = data['aktif'] ?? data['active'] ?? data['enabled'] ?? data['anahtar'];
     return _parseLicenseActive(value);
   }
 

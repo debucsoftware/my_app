@@ -16,7 +16,9 @@ import 'package:istakibim/services/notification_service.dart';
 import 'package:provider/provider.dart';
 
 class IstakibimApp extends StatelessWidget {
-  const IstakibimApp({super.key});
+  const IstakibimApp({super.key, required this.initialLicenseEnabled});
+
+  final bool initialLicenseEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -33,13 +35,15 @@ class IstakibimApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const LicenseGate(),
+      home: LicenseGate(initialEnabled: initialLicenseEnabled),
     );
   }
 }
 
 class LicenseGate extends StatefulWidget {
-  const LicenseGate({super.key});
+  const LicenseGate({super.key, required this.initialEnabled});
+
+  final bool initialEnabled;
 
   @override
   State<LicenseGate> createState() => _LicenseGateState();
@@ -47,44 +51,32 @@ class LicenseGate extends StatefulWidget {
 
 class _LicenseGateState extends State<LicenseGate> {
   bool _signedOutForLock = false;
-  bool _checkTimedOut = false;
+  late bool _enabled;
 
   @override
   void initState() {
     super.initState();
-    Future<void>.delayed(const Duration(seconds: 12), () {
-      if (mounted) setState(() => _checkTimedOut = true);
+    _enabled = widget.initialEnabled;
+    if (!_enabled) _signOutIfNeeded();
+    FirestoreService().watchAppLicenseEnabled().listen((enabled) {
+      if (!mounted) return;
+      setState(() => _enabled = enabled);
+      if (!enabled) _signOutIfNeeded();
     });
+  }
+
+  void _signOutIfNeeded() {
+    if (_signedOutForLock || FirebaseAuth.instance.currentUser == null) return;
+    _signedOutForLock = true;
+    AuthService().signOut();
   }
 
   @override
   Widget build(BuildContext context) {
-    final firestore = FirestoreService();
-
-    return StreamBuilder<bool>(
-      stream: firestore.watchAppLicenseEnabled(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && !_checkTimedOut) {
-          return const _LoadingScaffold(message: 'Sistem kontrol ediliyor...');
-        }
-        if (snapshot.connectionState == ConnectionState.waiting && _checkTimedOut) {
-          return const AppLockedScreen();
-        }
-        if (snapshot.hasError) {
-          return const AppLockedScreen();
-        }
-        final enabled = snapshot.data;
-        if (enabled != true) {
-          if (!_signedOutForLock && FirebaseAuth.instance.currentUser != null) {
-            _signedOutForLock = true;
-            AuthService().signOut();
-          }
-          return const AppLockedScreen();
-        }
-        _signedOutForLock = false;
-        return const AuthGate();
-      },
-    );
+    if (!_enabled) {
+      return const AppLockedScreen();
+    }
+    return const AuthGate();
   }
 }
 
