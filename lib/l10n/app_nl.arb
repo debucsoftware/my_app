@@ -69,6 +69,8 @@
   "createWorker": "Werknemer aanmaken",
   "workerName": "Naam werknemer",
   "noTasksToday": "Geen taken vandaag",
+  "noAssignedTasks": "Geen toegewezen taken",
+  "upcomingTasks": "Aankomende taken",
   "loginError": "Inloggen mislukt",
   "welcomeAdmin": "Beheerderspaneel",
   "welcomeWorker": "Werknemerspaneel",

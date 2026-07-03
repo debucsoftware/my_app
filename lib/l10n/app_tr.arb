@@ -69,6 +69,8 @@
   "createWorker": "İşçi Oluştur",
   "workerName": "İşçi Adı",
   "noTasksToday": "Bugün görev yok",
+  "noAssignedTasks": "Size atanmış görev yok",
+  "upcomingTasks": "Yaklaşan Görevler",
   "loginError": "Giriş başarısız",
   "welcomeAdmin": "Yönetici Paneli",
   "welcomeWorker": "İşçi Paneli",

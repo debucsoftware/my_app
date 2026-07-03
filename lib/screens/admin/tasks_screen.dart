@@ -113,7 +113,11 @@ class TasksScreen extends StatelessWidget {
     Unit? selectedUnit;
     List<AppUser> workers = [];
     final selectedWorkers = <String>{};
-    DateTime? dueDate;
+    DateTime? dueDate = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
     final roomCtrl = TextEditingController();
     var priority = TaskPriority.medium;
 
@@ -270,6 +274,15 @@ class TasksScreen extends StatelessWidget {
             FilledButton(
               onPressed: () async {
                 if (selectedProject == null || selectedUnit == null) return;
+                if (selectedWorkers.isEmpty) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text(l10n.assignWorkers)),
+                  );
+                  return;
+                }
+                final normalizedDueDate = dueDate == null
+                    ? null
+                    : DateTime(dueDate!.year, dueDate!.month, dueDate!.day);
                 final items = checklistCtrl.text
                     .split(',')
                     .map((e) => e.trim())
@@ -283,7 +296,7 @@ class TasksScreen extends StatelessWidget {
                   title: titleCtrl.text,
                   description: descCtrl.text,
                   assignedWorkerIds: selectedWorkers.toList(),
-                  dueDate: dueDate,
+                  dueDate: normalizedDueDate,
                   priority: priority,
                   room: roomCtrl.text.isEmpty ? null : roomCtrl.text,
                   checklist: items,

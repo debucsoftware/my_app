@@ -512,6 +512,18 @@ abstract class AppLocalizations {
   /// **'Bugün görev yok'**
   String get noTasksToday;
 
+  /// No description provided for @noAssignedTasks.
+  ///
+  /// In tr, this message translates to:
+  /// **'Size atanmış görev yok'**
+  String get noAssignedTasks;
+
+  /// No description provided for @upcomingTasks.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaklaşan Görevler'**
+  String get upcomingTasks;
+
   /// No description provided for @loginError.
   ///
   /// In tr, this message translates to:

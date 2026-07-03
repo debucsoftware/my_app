@@ -216,6 +216,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noTasksToday => 'Bugün görev yok';
 
   @override
+  String get noAssignedTasks => 'Size atanmış görev yok';
+
+  @override
+  String get upcomingTasks => 'Yaklaşan Görevler';
+
+  @override
   String get loginError => 'Giriş başarısız';
 
   @override

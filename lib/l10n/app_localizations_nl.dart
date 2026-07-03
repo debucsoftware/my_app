@@ -216,6 +216,12 @@ class AppLocalizationsNl extends AppLocalizations {
   String get noTasksToday => 'Geen taken vandaag';
 
   @override
+  String get noAssignedTasks => 'Geen toegewezen taken';
+
+  @override
+  String get upcomingTasks => 'Aankomende taken';
+
+  @override
   String get loginError => 'Inloggen mislukt';
 
   @override
