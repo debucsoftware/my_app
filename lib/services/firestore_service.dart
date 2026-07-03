@@ -66,10 +66,16 @@ class FirestoreService {
 
   // --- Projects ---
   Stream<List<Project>> watchProjects() {
-    return _db.collection('projects').orderBy('createdAt', descending: true).snapshots().map(
-          (snap) =>
-              snap.docs.map((d) => Project.fromMap(d.id, d.data())).toList(),
-        );
+    return _db.collection('projects').snapshots().map((snap) {
+      final projects =
+          snap.docs.map((d) => Project.fromMap(d.id, d.data())).toList();
+      projects.sort((a, b) {
+        final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bDate.compareTo(aDate);
+      });
+      return projects;
+    });
   }
 
   Future<String> saveProject(Project project) async {

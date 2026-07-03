@@ -116,8 +116,6 @@ class TasksScreen extends StatelessWidget {
     DateTime? dueDate;
     final roomCtrl = TextEditingController();
     var priority = TaskPriority.medium;
-    List<Project> projects = [];
-    List<Unit> units = [];
 
     await showDialog<void>(
       context: context,
@@ -130,31 +128,77 @@ class TasksScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  FutureBuilder<List<Project>>(
-                    future: firestore.watchProjects().first,
+                  StreamBuilder<List<Project>>(
+                    stream: firestore.watchProjects(),
                     builder: (c, s) {
-                      projects = s.data ?? [];
+                      if (s.hasError) {
+                        return Text(
+                          s.error.toString(),
+                          style: TextStyle(color: Theme.of(c).colorScheme.error),
+                        );
+                      }
+                      if (!s.hasData) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: LinearProgressIndicator(),
+                        );
+                      }
+                      final projects = s.data!;
+                      if (projects.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'Henüz proje yok. Önce ${l10n.projects} sekmesinden proje ekleyin.',
+                            style: TextStyle(color: Theme.of(c).colorScheme.error),
+                          ),
+                        );
+                      }
+                      final validSelection = selectedProject != null &&
+                          projects.any((p) => p.id == selectedProject!.id);
                       return DropdownButtonFormField<Project>(
+                        value: validSelection ? selectedProject : null,
                         decoration: InputDecoration(labelText: l10n.projectLabel),
                         items: projects
                             .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))
                             .toList(),
-                        onChanged: (p) async {
+                        onChanged: (p) => setDialogState(() {
                           selectedProject = p;
-                          units = p == null ? [] : await firestore.watchUnits(p.id).first;
                           selectedUnit = null;
-                          setDialogState(() {});
-                        },
+                        }),
                       );
                     },
                   ),
                   if (selectedProject != null)
-                    DropdownButtonFormField<Unit>(
-                      decoration: InputDecoration(labelText: l10n.units),
-                      items: units
-                          .map((u) => DropdownMenuItem(value: u, child: Text(u.displayLabel)))
-                          .toList(),
-                      onChanged: (u) => setDialogState(() => selectedUnit = u),
+                    StreamBuilder<List<Unit>>(
+                      stream: firestore.watchUnits(selectedProject!.id),
+                      builder: (c, s) {
+                        if (!s.hasData) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: LinearProgressIndicator(),
+                          );
+                        }
+                        final units = s.data!;
+                        if (units.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'Bu projede ev/daire yok. Önce ${l10n.units} sekmesinden ekleyin.',
+                              style: TextStyle(color: Theme.of(c).colorScheme.error),
+                            ),
+                          );
+                        }
+                        final validUnit = selectedUnit != null &&
+                            units.any((u) => u.id == selectedUnit!.id);
+                        return DropdownButtonFormField<Unit>(
+                          value: validUnit ? selectedUnit : null,
+                          decoration: InputDecoration(labelText: l10n.units),
+                          items: units
+                              .map((u) => DropdownMenuItem(value: u, child: Text(u.displayLabel)))
+                              .toList(),
+                          onChanged: (u) => setDialogState(() => selectedUnit = u),
+                        );
+                      },
                     ),
                   TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.tasks)),
                   TextField(controller: descCtrl, decoration: InputDecoration(labelText: l10n.description)),
