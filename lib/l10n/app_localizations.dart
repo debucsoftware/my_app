@@ -601,6 +601,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hayır'**
   String get no;
+
+  /// No description provided for @adminLogin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yönetici Girişi'**
+  String get adminLogin;
+
+  /// No description provided for @workerLogin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Personel Girişi'**
+  String get workerLogin;
+
+  /// No description provided for @setPassword.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre Belirle'**
+  String get setPassword;
+
+  /// No description provided for @confirmPassword.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre Tekrar'**
+  String get confirmPassword;
+
+  /// No description provided for @continueBtn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam'**
+  String get continueBtn;
+
+  /// No description provided for @firstLoginHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'İlk girişiniz. Lütfen şifrenizi belirleyin.'**
+  String get firstLoginHint;
+
+  /// No description provided for @pendingSetup.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre bekliyor'**
+  String get pendingSetup;
+
+  /// No description provided for @inviteWorker.
+  ///
+  /// In tr, this message translates to:
+  /// **'Personel Ekle (E-posta)'**
+  String get inviteWorker;
 }
 
 class _AppLocalizationsDelegate

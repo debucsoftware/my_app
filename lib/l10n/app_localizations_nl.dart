@@ -259,4 +259,28 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get no => 'Nee';
+
+  @override
+  String get adminLogin => 'Beheerder login';
+
+  @override
+  String get workerLogin => 'Personeel login';
+
+  @override
+  String get setPassword => 'Wachtwoord instellen';
+
+  @override
+  String get confirmPassword => 'Wachtwoord bevestigen';
+
+  @override
+  String get continueBtn => 'Doorgaan';
+
+  @override
+  String get firstLoginHint => 'Eerste login. Stel uw wachtwoord in.';
+
+  @override
+  String get pendingSetup => 'Wachtwoord in afwachting';
+
+  @override
+  String get inviteWorker => 'Personeel toevoegen (e-mail)';
 }

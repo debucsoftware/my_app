@@ -83,5 +83,13 @@
   "addChecklistItem": "Werkitem toevoegen",
   "confirmDelete": "Weet u zeker dat u wilt verwijderen?",
   "yes": "Ja",
-  "no": "Nee"
+  "no": "Nee",
+  "adminLogin": "Beheerder login",
+  "workerLogin": "Personeel login",
+  "setPassword": "Wachtwoord instellen",
+  "confirmPassword": "Wachtwoord bevestigen",
+  "continueBtn": "Doorgaan",
+  "firstLoginHint": "Eerste login. Stel uw wachtwoord in.",
+  "pendingSetup": "Wachtwoord in afwachting",
+  "inviteWorker": "Personeel toevoegen (e-mail)"
 }

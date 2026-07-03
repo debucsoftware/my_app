@@ -259,4 +259,28 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get no => 'Hayır';
+
+  @override
+  String get adminLogin => 'Yönetici Girişi';
+
+  @override
+  String get workerLogin => 'Personel Girişi';
+
+  @override
+  String get setPassword => 'Şifre Belirle';
+
+  @override
+  String get confirmPassword => 'Şifre Tekrar';
+
+  @override
+  String get continueBtn => 'Devam';
+
+  @override
+  String get firstLoginHint => 'İlk girişiniz. Lütfen şifrenizi belirleyin.';
+
+  @override
+  String get pendingSetup => 'Şifre bekliyor';
+
+  @override
+  String get inviteWorker => 'Personel Ekle (E-posta)';
 }

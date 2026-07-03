@@ -1,8 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:istakibim/core/enums/app_enums.dart';
-import 'package:istakibim/firebase_options.dart';
+import 'package:istakibim/core/utils/email_key.dart';
+import 'package:istakibim/models/worker_invite.dart';
 import 'package:istakibim/models/app_user.dart';
 
 class AuthService {
@@ -70,39 +70,98 @@ class AuthService {
 
   Future<void> signOut() => _auth.signOut();
 
-  Future<AppUser> createWorkerAccount({
+  static String emailDocId(String email) => emailToDocId(email);
+
+  Future<WorkerInvite?> getWorkerInvite(String email) async {
+    final doc = await _firestore
+        .collection('worker_invites')
+        .doc(emailDocId(email))
+        .get();
+    if (!doc.exists) return null;
+    return WorkerInvite.fromMap(doc.id, doc.data()!);
+  }
+
+  Future<void> inviteWorker({
     required String email,
-    required String password,
     required String name,
     String? teamId,
   }) async {
-    final secondaryApp = await Firebase.initializeApp(
-      name: 'WorkerCreator',
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
-    try {
-      final credential = await secondaryAuth.createUserWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
+    final normalized = email.trim().toLowerCase();
+    final existing = await _firestore
+        .collection('users')
+        .where('email', isEqualTo: normalized)
+        .limit(1)
+        .get();
+    if (existing.docs.isNotEmpty) {
+      throw FirebaseAuthException(
+        code: 'email-already-in-use',
+        message: 'Bu e-posta zaten kayıtlı.',
       );
-      final appUser = AppUser(
-        id: credential.user!.uid,
-        email: email.trim(),
-        name: name,
-        role: UserRole.worker,
-        teamId: teamId,
-        createdAt: DateTime.now(),
-      );
-      await _firestore.collection('users').doc(appUser.id).set({
-        ...appUser.toMap(),
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      await secondaryAuth.signOut();
-      return appUser;
-    } finally {
-      await secondaryApp.delete();
     }
+    final inviteDoc = await _firestore
+        .collection('worker_invites')
+        .doc(emailDocId(normalized))
+        .get();
+    if (inviteDoc.exists) {
+      throw FirebaseAuthException(
+        code: 'invite-exists',
+        message: 'Bu e-posta için davet zaten var.',
+      );
+    }
+    await _firestore.collection('worker_invites').doc(emailDocId(normalized)).set({
+      'email': normalized,
+      'name': name,
+      'teamId': teamId,
+      'active': true,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<AppUser> completeWorkerRegistration({
+    required String email,
+    required String password,
+  }) async {
+    final invite = await getWorkerInvite(email);
+    if (invite == null) {
+      throw FirebaseAuthException(
+        code: 'invite-not-found',
+        message: 'Bu e-posta için davet bulunamadı.',
+      );
+    }
+    if (!invite.active) {
+      throw FirebaseAuthException(
+        code: 'invite-disabled',
+        message: 'Hesabınız pasif durumda.',
+      );
+    }
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: invite.email,
+      password: password,
+    );
+    final appUser = AppUser(
+      id: credential.user!.uid,
+      email: invite.email,
+      name: invite.name,
+      role: UserRole.worker,
+      teamId: invite.teamId,
+      createdAt: DateTime.now(),
+    );
+    await _firestore.collection('users').doc(appUser.id).set({
+      ...appUser.toMap(),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    await _firestore
+        .collection('worker_invites')
+        .doc(emailDocId(invite.email))
+        .delete();
+    return appUser;
+  }
+
+  Future<void> deleteWorkerInvite(String email) {
+    return _firestore
+        .collection('worker_invites')
+        .doc(emailDocId(email))
+        .delete();
   }
 
   Future<void> updateFcmToken(String userId, String token) {

@@ -83,5 +83,13 @@
   "addChecklistItem": "İş kalemi ekle",
   "confirmDelete": "Silmek istediğinize emin misiniz?",
   "yes": "Evet",
-  "no": "Hayır"
+  "no": "Hayır",
+  "adminLogin": "Yönetici Girişi",
+  "workerLogin": "Personel Girişi",
+  "setPassword": "Şifre Belirle",
+  "confirmPassword": "Şifre Tekrar",
+  "continueBtn": "Devam",
+  "firstLoginHint": "İlk girişiniz. Lütfen şifrenizi belirleyin.",
+  "pendingSetup": "Şifre bekliyor",
+  "inviteWorker": "Personel Ekle (E-posta)"
 }

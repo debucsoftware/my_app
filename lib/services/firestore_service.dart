@@ -6,6 +6,7 @@ import 'package:istakibim/models/project.dart';
 import 'package:istakibim/models/team.dart';
 import 'package:istakibim/models/unit.dart';
 import 'package:istakibim/models/work_task.dart';
+import 'package:istakibim/models/worker_invite.dart';
 
 class FirestoreService {
   FirestoreService({FirebaseFirestore? firestore})
@@ -21,6 +22,14 @@ class FirestoreService {
         .snapshots()
         .map((snap) =>
             snap.docs.map((d) => AppUser.fromMap(d.id, d.data())).toList());
+  }
+
+  Stream<List<WorkerInvite>> watchWorkerInvites() {
+    return _db.collection('worker_invites').orderBy('email').snapshots().map(
+          (snap) => snap.docs
+              .map((d) => WorkerInvite.fromMap(d.id, d.data()))
+              .toList(),
+        );
   }
 
   Future<void> updateUser(AppUser user) {
