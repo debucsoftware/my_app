@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:istakibim/core/enums/app_enums.dart';
+import 'package:istakibim/models/license_status.dart';
 import 'package:istakibim/models/app_notification.dart';
 import 'package:istakibim/models/app_user.dart';
 import 'package:istakibim/models/project.dart';
@@ -21,15 +22,50 @@ class FirestoreService {
   static const String licenseDocId = 'license';
 
   Future<bool> fetchLicenseFromServer() async {
+    final status = await checkLicense();
+    return status.enabled;
+  }
+
+  Future<LicenseStatus> checkLicense() async {
+    final docRef = _db.collection(licenseCollection).doc(licenseDocId);
+    String? serverError;
+
     try {
-      final snap = await _db
-          .collection(licenseCollection)
-          .doc(licenseDocId)
-          .get(const GetOptions(source: Source.server));
-      return _licenseEnabledFromSnap(snap);
-    } catch (_) {
-      return false;
+      final serverSnap = await docRef
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 15));
+      return _statusFromSnap(serverSnap, source: 'server');
+    } catch (e) {
+      serverError = e.toString();
     }
+
+    try {
+      final cacheSnap = await docRef.get(const GetOptions(source: Source.cache));
+      return _statusFromSnap(cacheSnap, source: 'cache', error: serverError);
+    } catch (e) {
+      return LicenseStatus(
+        enabled: false,
+        error: serverError ?? e.toString(),
+      );
+    }
+  }
+
+  LicenseStatus _statusFromSnap(
+    DocumentSnapshot<Map<String, dynamic>> snap, {
+    required String source,
+    String? error,
+  }) {
+    final data = snap.data();
+    final raw = data == null
+        ? null
+        : (data['aktif'] ?? data['active'] ?? data['enabled'] ?? data['anahtar']);
+    return LicenseStatus(
+      enabled: _licenseEnabledFromSnap(snap),
+      docExists: snap.exists,
+      rawAktif: raw?.toString(),
+      source: source,
+      error: error,
+    );
   }
 
   Stream<bool> watchAppLicenseEnabled() {
@@ -38,18 +74,11 @@ class FirestoreService {
     final controller = StreamController<bool>();
 
     Future<void> start() async {
-      try {
-        final snap = await docRef.get(const GetOptions(source: Source.server));
-        if (!controller.isClosed) {
-          controller.add(_licenseEnabledFromSnap(snap));
-        }
-      } catch (_) {
-        if (!controller.isClosed) controller.add(false);
-      }
+      final status = await checkLicense();
+      if (!controller.isClosed) controller.add(status.enabled);
 
       sub = docRef.snapshots().listen(
         (snap) {
-          if (snap.metadata.isFromCache) return;
           if (!controller.isClosed) {
             controller.add(_licenseEnabledFromSnap(snap));
           }

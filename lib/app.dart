@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:istakibim/core/theme/app_theme.dart';
 import 'package:istakibim/l10n/app_localizations.dart';
 import 'package:istakibim/models/app_user.dart';
+import 'package:istakibim/models/license_status.dart';
 import 'package:istakibim/screens/admin/admin_shell.dart';
 import 'package:istakibim/screens/auth/login_screen.dart';
 import 'package:istakibim/screens/common/app_locked_screen.dart';
@@ -52,17 +55,55 @@ class LicenseGate extends StatefulWidget {
 class _LicenseGateState extends State<LicenseGate> {
   bool _signedOutForLock = false;
   late bool _enabled;
+  LicenseStatus? _status;
+  bool _checking = false;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _enabled = widget.initialEnabled;
-    if (!_enabled) _signOutIfNeeded();
+    if (!_enabled) {
+      _signOutIfNeeded();
+      _loadStatus();
+      _startPolling();
+    }
     FirestoreService().watchAppLicenseEnabled().listen((enabled) {
       if (!mounted) return;
-      setState(() => _enabled = enabled);
+      setState(() {
+        _enabled = enabled;
+        if (enabled) _signedOutForLock = false;
+      });
       if (!enabled) _signOutIfNeeded();
     });
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_enabled || !mounted) return;
+      _loadStatus();
+    });
+  }
+
+  Future<void> _loadStatus() async {
+    if (_checking) return;
+    setState(() => _checking = true);
+    final status = await FirestoreService().checkLicense();
+    if (!mounted) return;
+    setState(() {
+      _checking = false;
+      _status = status;
+      _enabled = status.enabled;
+      if (status.enabled) _signedOutForLock = false;
+    });
+    if (!status.enabled) _signOutIfNeeded();
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   void _signOutIfNeeded() {
@@ -74,7 +115,11 @@ class _LicenseGateState extends State<LicenseGate> {
   @override
   Widget build(BuildContext context) {
     if (!_enabled) {
-      return const AppLockedScreen();
+      return AppLockedScreen(
+        status: _status,
+        checking: _checking,
+        onRetry: _loadStatus,
+      );
     }
     return const AuthGate();
   }

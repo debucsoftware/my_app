@@ -116,6 +116,24 @@ abstract class AppLocalizations {
   /// **'Uygulama şu an kullanılamıyor. Lütfen daha sonra tekrar deneyin.'**
   String get appLockedHint;
 
+  /// No description provided for @retryCheck.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar kontrol et'**
+  String get retryCheck;
+
+  /// No description provided for @copyLog.
+  ///
+  /// In tr, this message translates to:
+  /// **'Logu kopyala'**
+  String get copyLog;
+
+  /// No description provided for @logCopied.
+  ///
+  /// In tr, this message translates to:
+  /// **'Log panoya kopyalandı'**
+  String get logCopied;
+
   /// No description provided for @login.
   ///
   /// In tr, this message translates to:
