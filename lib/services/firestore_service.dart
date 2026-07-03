@@ -14,6 +14,21 @@ class FirestoreService {
 
   final FirebaseFirestore _db;
 
+  // --- Lisans anahtarı (Firebase Console'dan yönetilir) ---
+  static const String licenseCollection = 'app_config';
+  static const String licenseDocId = 'license';
+
+  Stream<bool> watchAppLicenseEnabled() {
+    return _db.collection(licenseCollection).doc(licenseDocId).snapshots().map((snap) {
+      if (!snap.exists) return true;
+      final value = snap.data()?['anahtar'];
+      if (value is int) return value == 1;
+      if (value is bool) return value;
+      if (value is String) return value == '1';
+      return true;
+    });
+  }
+
   // --- Users ---
   Stream<List<AppUser>> watchWorkers() {
     return _db

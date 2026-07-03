@@ -7,8 +7,10 @@ import 'package:istakibim/l10n/app_localizations.dart';
 import 'package:istakibim/models/app_user.dart';
 import 'package:istakibim/screens/admin/admin_shell.dart';
 import 'package:istakibim/screens/auth/login_screen.dart';
+import 'package:istakibim/screens/common/app_locked_screen.dart';
 import 'package:istakibim/screens/worker/worker_home_screen.dart';
 import 'package:istakibim/services/auth_service.dart';
+import 'package:istakibim/services/firestore_service.dart';
 import 'package:istakibim/services/locale_service.dart';
 import 'package:istakibim/services/notification_service.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +33,32 @@ class IstakibimApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const AuthGate(),
+      home: const LicenseGate(),
+    );
+  }
+}
+
+class LicenseGate extends StatelessWidget {
+  const LicenseGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final firestore = FirestoreService();
+
+    return StreamBuilder<bool>(
+      stream: firestore.watchAppLicenseEnabled(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const AppLockedScreen();
+        }
+        if (!snapshot.hasData) {
+          return const _LoadingScaffold();
+        }
+        if (!snapshot.data!) {
+          return const AppLockedScreen();
+        }
+        return const AuthGate();
+      },
     );
   }
 }

@@ -64,5 +64,11 @@ service cloud.firestore {
         resource.data.email == request.auth.token.email
       );
     }
+
+    // Uygulama anahtarı: herkes okuyabilir, yalnızca Firebase Console'dan yazılır
+    match /app_config/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

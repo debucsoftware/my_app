@@ -104,6 +104,18 @@ abstract class AppLocalizations {
   /// **'İş Takibim'**
   String get appTitle;
 
+  /// No description provided for @appLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama kilitli'**
+  String get appLocked;
+
+  /// No description provided for @appLockedHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Erişim kapalı. Firebase Console → app_config → license → anahtar alanını 1 yapın.'**
+  String get appLockedHint;
+
   /// No description provided for @login.
   ///
   /// In tr, this message translates to:
