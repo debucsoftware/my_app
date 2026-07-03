@@ -7,7 +7,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:istakibim/core/theme/app_theme.dart';
 import 'package:istakibim/l10n/app_localizations.dart';
 import 'package:istakibim/models/app_user.dart';
-import 'package:istakibim/models/license_status.dart';
 import 'package:istakibim/screens/admin/admin_shell.dart';
 import 'package:istakibim/screens/auth/login_screen.dart';
 import 'package:istakibim/screens/common/app_locked_screen.dart';
@@ -55,8 +54,6 @@ class LicenseGate extends StatefulWidget {
 class _LicenseGateState extends State<LicenseGate> {
   bool _signedOutForLock = false;
   late bool _enabled;
-  LicenseStatus? _status;
-  bool _checking = false;
   Timer? _pollTimer;
 
   @override
@@ -65,7 +62,7 @@ class _LicenseGateState extends State<LicenseGate> {
     _enabled = widget.initialEnabled;
     if (!_enabled) {
       _signOutIfNeeded();
-      _loadStatus();
+      _recheckLicense();
       _startPolling();
     }
     FirestoreService().watchAppLicenseEnabled().listen((enabled) {
@@ -82,22 +79,18 @@ class _LicenseGateState extends State<LicenseGate> {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (_enabled || !mounted) return;
-      _loadStatus();
+      _recheckLicense();
     });
   }
 
-  Future<void> _loadStatus() async {
-    if (_checking) return;
-    setState(() => _checking = true);
-    final status = await FirestoreService().checkLicense();
+  Future<void> _recheckLicense() async {
+    final enabled = await FirestoreService().fetchLicenseFromServer();
     if (!mounted) return;
     setState(() {
-      _checking = false;
-      _status = status;
-      _enabled = status.enabled;
-      if (status.enabled) _signedOutForLock = false;
+      _enabled = enabled;
+      if (enabled) _signedOutForLock = false;
     });
-    if (!status.enabled) _signOutIfNeeded();
+    if (!enabled) _signOutIfNeeded();
   }
 
   @override
@@ -115,11 +108,7 @@ class _LicenseGateState extends State<LicenseGate> {
   @override
   Widget build(BuildContext context) {
     if (!_enabled) {
-      return AppLockedScreen(
-        status: _status,
-        checking: _checking,
-        onRetry: _loadStatus,
-      );
+      return const AppLockedScreen();
     }
     return const AuthGate();
   }

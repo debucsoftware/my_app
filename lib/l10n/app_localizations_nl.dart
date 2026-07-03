@@ -19,15 +19,6 @@ class AppLocalizationsNl extends AppLocalizations {
       'De app is momenteel niet beschikbaar. Probeer het later opnieuw.';
 
   @override
-  String get retryCheck => 'Opnieuw controleren';
-
-  @override
-  String get copyLog => 'Log kopiëren';
-
-  @override
-  String get logCopied => 'Log gekopieerd';
-
-  @override
   String get login => 'Inloggen';
 
   @override

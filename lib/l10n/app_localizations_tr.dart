@@ -19,15 +19,6 @@ class AppLocalizationsTr extends AppLocalizations {
       'Uygulama şu an kullanılamıyor. Lütfen daha sonra tekrar deneyin.';
 
   @override
-  String get retryCheck => 'Tekrar kontrol et';
-
-  @override
-  String get copyLog => 'Logu kopyala';
-
-  @override
-  String get logCopied => 'Log panoya kopyalandı';
-
-  @override
   String get login => 'Giriş Yap';
 
   @override
