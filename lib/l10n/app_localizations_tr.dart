@@ -16,7 +16,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get appLockedHint =>
-      'Erişim kapalı. Firebase Console → app_config → license → anahtar alanını 1 yapın.';
+      'Erişim kapalı. Firebase Console → app_config → license → aktif alanını true yapın.';
 
   @override
   String get login => 'Giriş Yap';

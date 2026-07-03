@@ -2,7 +2,7 @@
   "@@locale": "nl",
   "appTitle": "Werk Volgen",
   "appLocked": "App vergrendeld",
-  "appLockedHint": "Geen toegang. Zet in Firebase Console → app_config → license → anahtar op 1.",
+  "appLockedHint": "Geen toegang. Zet in Firebase Console → app_config → license → aktif op true.",
   "login": "Inloggen",
   "email": "E-mail",
   "password": "Wachtwoord",

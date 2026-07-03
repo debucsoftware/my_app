@@ -16,7 +16,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get appLockedHint =>
-      'Geen toegang. Zet in Firebase Console → app_config → license → anahtar op 1.';
+      'Geen toegang. Zet in Firebase Console → app_config → license → aktif op true.';
 
   @override
   String get login => 'Inloggen';

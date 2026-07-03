@@ -65,7 +65,7 @@ service cloud.firestore {
       );
     }
 
-    // Uygulama anahtarı: herkes okuyabilir, yalnızca Firebase Console'dan yazılır
+    // Uygulama kilidi: herkes okuyabilir, yalnızca Firebase Console'dan yazılır
     match /app_config/{docId} {
       allow read: if true;
       allow write: if false;

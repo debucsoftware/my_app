@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// No description provided for @appLockedHint.
   ///
   /// In tr, this message translates to:
-  /// **'Erişim kapalı. Firebase Console → app_config → license → anahtar alanını 1 yapın.'**
+  /// **'Erişim kapalı. Firebase Console → app_config → license → aktif alanını true yapın.'**
   String get appLockedHint;
 
   /// No description provided for @login.
