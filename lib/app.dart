@@ -38,8 +38,15 @@ class IstakibimApp extends StatelessWidget {
   }
 }
 
-class LicenseGate extends StatelessWidget {
+class LicenseGate extends StatefulWidget {
   const LicenseGate({super.key});
+
+  @override
+  State<LicenseGate> createState() => _LicenseGateState();
+}
+
+class _LicenseGateState extends State<LicenseGate> {
+  bool _signedOutForLock = false;
 
   @override
   Widget build(BuildContext context) {
@@ -48,15 +55,21 @@ class LicenseGate extends StatelessWidget {
     return StreamBuilder<bool>(
       stream: firestore.watchAppLicenseEnabled(),
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const _LoadingScaffold();
+        }
         if (snapshot.hasError) {
           return const AppLockedScreen();
         }
-        if (!snapshot.hasData) {
-          return const _LoadingScaffold();
-        }
-        if (!snapshot.data!) {
+        final enabled = snapshot.data;
+        if (enabled != true) {
+          if (!_signedOutForLock && FirebaseAuth.instance.currentUser != null) {
+            _signedOutForLock = true;
+            AuthService().signOut();
+          }
           return const AppLockedScreen();
         }
+        _signedOutForLock = false;
         return const AuthGate();
       },
     );

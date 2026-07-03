@@ -1,8 +1,8 @@
 {
   "@@locale": "nl",
   "appTitle": "Werk Volgen",
-  "appLocked": "App vergrendeld",
-  "appLockedHint": "Geen toegang. Zet in Firebase Console → app_config → license → aktif op true.",
+  "appLocked": "Systeem vergrendeld door ontwikkelaar",
+  "appLockedHint": "De app is momenteel niet beschikbaar. Probeer het later opnieuw.",
   "login": "Inloggen",
   "email": "E-mail",
   "password": "Wachtwoord",

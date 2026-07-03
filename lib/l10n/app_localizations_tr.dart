@@ -12,11 +12,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get appTitle => 'İş Takibim';
 
   @override
-  String get appLocked => 'Uygulama kilitli';
+  String get appLocked => 'Geliştirici tarafından sistem kilitlendi';
 
   @override
   String get appLockedHint =>
-      'Erişim kapalı. Firebase Console → app_config → license → aktif alanını true yapın.';
+      'Uygulama şu an kullanılamıyor. Lütfen daha sonra tekrar deneyin.';
 
   @override
   String get login => 'Giriş Yap';

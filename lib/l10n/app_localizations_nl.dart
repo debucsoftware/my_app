@@ -12,11 +12,11 @@ class AppLocalizationsNl extends AppLocalizations {
   String get appTitle => 'Werk Volgen';
 
   @override
-  String get appLocked => 'App vergrendeld';
+  String get appLocked => 'Systeem vergrendeld door ontwikkelaar';
 
   @override
   String get appLockedHint =>
-      'Geen toegang. Zet in Firebase Console → app_config → license → aktif op true.';
+      'De app is momenteel niet beschikbaar. Probeer het later opnieuw.';
 
   @override
   String get login => 'Inloggen';

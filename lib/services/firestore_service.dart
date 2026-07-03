@@ -21,10 +21,23 @@ class FirestoreService {
   Stream<bool> watchAppLicenseEnabled() {
     return _db.collection(licenseCollection).doc(licenseDocId).snapshots().map((snap) {
       if (!snap.exists) return true;
-      final value = snap.data()?['aktif'];
-      if (value is bool) return value;
-      return true;
+      final data = snap.data();
+      if (data == null) return false;
+      final value = data['aktif'] ?? data['anahtar'];
+      return _parseLicenseActive(value);
     });
+  }
+
+  bool _parseLicenseActive(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      if (normalized == 'true' || normalized == '1') return true;
+      if (normalized == 'false' || normalized == '0') return false;
+    }
+    if (value is int) return value != 0;
+    return false;
   }
 
   // --- Users ---

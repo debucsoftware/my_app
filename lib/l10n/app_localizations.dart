@@ -107,13 +107,13 @@ abstract class AppLocalizations {
   /// No description provided for @appLocked.
   ///
   /// In tr, this message translates to:
-  /// **'Uygulama kilitli'**
+  /// **'Geliştirici tarafından sistem kilitlendi'**
   String get appLocked;
 
   /// No description provided for @appLockedHint.
   ///
   /// In tr, this message translates to:
-  /// **'Erişim kapalı. Firebase Console → app_config → license → aktif alanını true yapın.'**
+  /// **'Uygulama şu an kullanılamıyor. Lütfen daha sonra tekrar deneyin.'**
   String get appLockedHint;
 
   /// No description provided for @login.

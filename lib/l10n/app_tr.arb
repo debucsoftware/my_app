@@ -1,8 +1,8 @@
 {
   "@@locale": "tr",
   "appTitle": "İş Takibim",
-  "appLocked": "Uygulama kilitli",
-  "appLockedHint": "Erişim kapalı. Firebase Console → app_config → license → aktif alanını true yapın.",
+  "appLocked": "Geliştirici tarafından sistem kilitlendi",
+  "appLockedHint": "Uygulama şu an kullanılamıyor. Lütfen daha sonra tekrar deneyin.",
   "login": "Giriş Yap",
   "email": "E-posta",
   "password": "Şifre",
