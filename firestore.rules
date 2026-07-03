@@ -20,7 +20,12 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn() && (isAdmin() || request.auth.uid == userId);
       allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken'])
+      );
+      allow delete: if isAdmin();
     }
 
     match /teams/{teamId} {
