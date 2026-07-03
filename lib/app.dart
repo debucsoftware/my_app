@@ -47,6 +47,15 @@ class LicenseGate extends StatefulWidget {
 
 class _LicenseGateState extends State<LicenseGate> {
   bool _signedOutForLock = false;
+  bool _checkTimedOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(seconds: 12), () {
+      if (mounted) setState(() => _checkTimedOut = true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,8 +64,11 @@ class _LicenseGateState extends State<LicenseGate> {
     return StreamBuilder<bool>(
       stream: firestore.watchAppLicenseEnabled(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const _LoadingScaffold();
+        if (snapshot.connectionState == ConnectionState.waiting && !_checkTimedOut) {
+          return const _LoadingScaffold(message: 'Sistem kontrol ediliyor...');
+        }
+        if (snapshot.connectionState == ConnectionState.waiting && _checkTimedOut) {
+          return const AppLockedScreen();
         }
         if (snapshot.hasError) {
           return const AppLockedScreen();

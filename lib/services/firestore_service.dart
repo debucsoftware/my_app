@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:istakibim/core/enums/app_enums.dart';
 import 'package:istakibim/models/app_notification.dart';
@@ -19,13 +21,44 @@ class FirestoreService {
   static const String licenseDocId = 'license';
 
   Stream<bool> watchAppLicenseEnabled() {
-    return _db.collection(licenseCollection).doc(licenseDocId).snapshots().map((snap) {
-      if (!snap.exists) return true;
-      final data = snap.data();
-      if (data == null) return false;
-      final value = data['aktif'] ?? data['anahtar'];
-      return _parseLicenseActive(value);
-    });
+    final docRef = _db.collection(licenseCollection).doc(licenseDocId);
+    StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? sub;
+    final controller = StreamController<bool>();
+
+    Future<void> start() async {
+      try {
+        final snap = await docRef.get(const GetOptions(source: Source.server));
+        if (!controller.isClosed) {
+          controller.add(_licenseEnabledFromSnap(snap));
+        }
+      } catch (_) {
+        if (!controller.isClosed) controller.add(false);
+      }
+
+      sub = docRef.snapshots().listen(
+        (snap) {
+          if (snap.metadata.isFromCache) return;
+          if (!controller.isClosed) {
+            controller.add(_licenseEnabledFromSnap(snap));
+          }
+        },
+        onError: (_) {
+          if (!controller.isClosed) controller.add(false);
+        },
+      );
+    }
+
+    start();
+    controller.onCancel = () => sub?.cancel();
+    return controller.stream;
+  }
+
+  bool _licenseEnabledFromSnap(DocumentSnapshot<Map<String, dynamic>> snap) {
+    if (!snap.exists) return true;
+    final data = snap.data();
+    if (data == null) return false;
+    final value = data['aktif'] ?? data['anahtar'];
+    return _parseLicenseActive(value);
   }
 
   bool _parseLicenseActive(dynamic value) {
