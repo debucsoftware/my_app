@@ -22,6 +22,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _load() async {
+    await _firestore.syncOverdueTasks();
     final stats = await _firestore.getDashboardStats();
     if (mounted) {
       setState(() {

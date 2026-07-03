@@ -4,9 +4,12 @@ import 'package:istakibim/models/app_user.dart';
 import 'package:istakibim/screens/admin/analytics_screen.dart';
 import 'package:istakibim/screens/admin/archive_screen.dart';
 import 'package:istakibim/screens/admin/dashboard_screen.dart';
+import 'package:istakibim/screens/admin/notifications_screen.dart';
 import 'package:istakibim/screens/admin/projects_screen.dart';
 import 'package:istakibim/screens/admin/search_screen.dart';
 import 'package:istakibim/screens/admin/tasks_screen.dart';
+import 'package:istakibim/screens/admin/teams_screen.dart';
+import 'package:istakibim/screens/admin/units_screen.dart';
 import 'package:istakibim/screens/admin/workers_screen.dart';
 import 'package:istakibim/services/auth_service.dart';
 import 'package:istakibim/widgets/language_selector.dart';
@@ -31,7 +34,9 @@ class _AdminShellState extends State<AdminShell> {
     final pages = [
       const DashboardScreen(),
       const ProjectsScreen(),
+      const UnitsScreen(),
       const WorkersScreen(),
+      const TeamsScreen(),
       const TasksScreen(),
       const AnalyticsScreen(),
       const ArchiveScreen(),
@@ -39,19 +44,31 @@ class _AdminShellState extends State<AdminShell> {
     ];
 
     final destinations = [
-      NavigationDestination(icon: const Icon(Icons.dashboard), label: l10n.dashboard),
-      NavigationDestination(icon: const Icon(Icons.apartment), label: l10n.projects),
-      NavigationDestination(icon: const Icon(Icons.people), label: l10n.workers),
-      NavigationDestination(icon: const Icon(Icons.task_alt), label: l10n.tasks),
-      NavigationDestination(icon: const Icon(Icons.analytics), label: l10n.analytics),
-      NavigationDestination(icon: const Icon(Icons.archive), label: l10n.archive),
-      NavigationDestination(icon: const Icon(Icons.search), label: l10n.search),
+      (Icons.dashboard, l10n.dashboard),
+      (Icons.apartment, l10n.projects),
+      (Icons.home_work, l10n.units),
+      (Icons.people, l10n.workers),
+      (Icons.groups, l10n.teams),
+      (Icons.task_alt, l10n.tasks),
+      (Icons.analytics, l10n.analytics),
+      (Icons.archive, l10n.archive),
+      (Icons.search, l10n.search),
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.welcomeAdmin),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: l10n.notifications,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => NotificationsScreen(user: widget.user),
+              ),
+            ),
+          ),
           const LanguageSelector(),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -60,6 +77,29 @@ class _AdminShellState extends State<AdminShell> {
           ),
         ],
       ),
+      drawer: isWide
+          ? null
+          : Drawer(
+              child: ListView(
+                children: [
+                  DrawerHeader(
+                    child: Text(l10n.welcomeAdmin, style: Theme.of(context).textTheme.titleLarge),
+                  ),
+                  ...List.generate(destinations.length, (i) {
+                    final (icon, label) = destinations[i];
+                    return ListTile(
+                      leading: Icon(icon),
+                      title: Text(label),
+                      selected: _index == i,
+                      onTap: () {
+                        setState(() => _index = i);
+                        Navigator.pop(context);
+                      },
+                    );
+                  }),
+                ],
+              ),
+            ),
       body: isWide
           ? Row(
               children: [
@@ -69,8 +109,8 @@ class _AdminShellState extends State<AdminShell> {
                   labelType: NavigationRailLabelType.all,
                   destinations: destinations
                       .map((d) => NavigationRailDestination(
-                            icon: d.icon,
-                            label: Text(d.label),
+                            icon: Icon(d.$1),
+                            label: Text(d.$2),
                           ))
                       .toList(),
                 ),
@@ -79,13 +119,6 @@ class _AdminShellState extends State<AdminShell> {
               ],
             )
           : pages[_index],
-      bottomNavigationBar: isWide
-          ? null
-          : NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: (i) => setState(() => _index = i),
-              destinations: destinations,
-            ),
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:istakibim/models/project.dart';
 import 'package:istakibim/models/unit.dart';
 import 'package:istakibim/models/work_task.dart';
 import 'package:istakibim/services/firestore_service.dart';
+import 'package:istakibim/widgets/base64_image.dart';
 import 'package:istakibim/widgets/status_badge.dart';
 
 class TasksScreen extends StatelessWidget {
@@ -61,7 +62,27 @@ class TasksScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(task.title),
-        content: Text(task.workerNote ?? l10n.completed),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (task.workerNote != null) Text(task.workerNote!),
+              if (task.photoUrls.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 100,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: task.photoUrls.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (_, i) => Base64Image(base64: task.photoUrls[i], width: 100),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () async {
@@ -93,8 +114,8 @@ class TasksScreen extends StatelessWidget {
     List<AppUser> workers = [];
     final selectedWorkers = <String>{};
     DateTime? dueDate;
-    TaskPriority priority = TaskPriority.medium;
-
+    final roomCtrl = TextEditingController();
+    var priority = TaskPriority.medium;
     List<Project> projects = [];
     List<Unit> units = [];
 
@@ -137,6 +158,20 @@ class TasksScreen extends StatelessWidget {
                     ),
                   TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.tasks)),
                   TextField(controller: descCtrl, decoration: InputDecoration(labelText: l10n.description)),
+                  TextField(controller: roomCtrl, decoration: InputDecoration(labelText: l10n.room)),
+                  DropdownButtonFormField<TaskPriority>(
+                    value: priority,
+                    decoration: InputDecoration(labelText: l10n.priority),
+                    items: TaskPriority.values.map((p) {
+                      final label = switch (p) {
+                        TaskPriority.low => l10n.low,
+                        TaskPriority.medium => l10n.medium,
+                        TaskPriority.high => l10n.high,
+                      };
+                      return DropdownMenuItem(value: p, child: Text(label));
+                    }).toList(),
+                    onChanged: (v) => setDialogState(() => priority = v ?? TaskPriority.medium),
+                  ),
                   TextField(
                     controller: checklistCtrl,
                     decoration: InputDecoration(
@@ -206,6 +241,7 @@ class TasksScreen extends StatelessWidget {
                   assignedWorkerIds: selectedWorkers.toList(),
                   dueDate: dueDate,
                   priority: priority,
+                  room: roomCtrl.text.isEmpty ? null : roomCtrl.text,
                   checklist: items,
                 );
                 final taskId = await firestore.saveTask(task);

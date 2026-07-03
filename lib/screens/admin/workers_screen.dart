@@ -35,15 +35,68 @@ class WorkersScreen extends StatelessWidget {
                   leading: CircleAvatar(child: Text(w.name.isNotEmpty ? w.name[0] : '?')),
                   title: Text(w.name),
                   subtitle: Text(w.email),
-                  trailing: Switch(
-                    value: w.active,
-                    onChanged: (v) => firestore.updateUser(w.copyWith(active: v)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Switch(
+                        value: w.active,
+                        onChanged: (v) => firestore.updateUser(w.copyWith(active: v)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => _confirmDelete(context, w),
+                      ),
+                    ],
                   ),
+                  onTap: () => _showEditWorkerDialog(context, w),
                 ),
               );
             },
           );
         },
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, AppUser worker) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.confirmDelete),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.no)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.yes)),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await FirestoreService().deleteUser(worker.id);
+    }
+  }
+
+  Future<void> _showEditWorkerDialog(BuildContext context, AppUser worker) async {
+    final l10n = AppLocalizations.of(context)!;
+    final nameCtrl = TextEditingController(text: worker.name);
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.edit),
+        content: TextField(
+          controller: nameCtrl,
+          decoration: InputDecoration(labelText: l10n.workerName),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+          FilledButton(
+            onPressed: () async {
+              await FirestoreService().updateUser(worker.copyWith(name: nameCtrl.text));
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: Text(l10n.save),
+          ),
+        ],
       ),
     );
   }

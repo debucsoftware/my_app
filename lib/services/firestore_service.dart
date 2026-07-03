@@ -168,12 +168,106 @@ class FirestoreService {
     return _db.collection('tasks').doc(taskId).delete();
   }
 
-  Future<void> approveTask(String taskId) {
-    return _db.collection('tasks').doc(taskId).update({
+  Future<void> approveTask(String taskId) async {
+    final doc = await _db.collection('tasks').doc(taskId).get();
+    if (!doc.exists) return;
+    final task = WorkTask.fromMap(doc.id, doc.data()!);
+    await _db.collection('tasks').doc(taskId).update({
       'approvalStatus': ApprovalStatus.approved.name,
       'status': TaskStatus.approved.name,
       'archived': true,
     });
+    await _updateProjectProgress(task.projectId);
+  }
+
+  Future<void> _updateProjectProgress(String projectId) async {
+    final snap = await _db
+        .collection('tasks')
+        .where('projectId', isEqualTo: projectId)
+        .get();
+    if (snap.docs.isEmpty) return;
+    final total = snap.docs.length;
+    final done = snap.docs.where((d) {
+      final s = d.data()['status'] as String?;
+      return s == TaskStatus.approved.name || d.data()['archived'] == true;
+    }).length;
+    await _db.collection('projects').doc(projectId).update({
+      'progress': (done / total) * 100,
+    });
+  }
+
+  Future<void> syncOverdueTasks() async {
+    final snap = await _db
+        .collection('tasks')
+        .where('archived', isEqualTo: false)
+        .get();
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      final task = WorkTask.fromMap(doc.id, doc.data());
+      if (task.isOverdue &&
+          task.status != TaskStatus.overdue &&
+          task.status != TaskStatus.completed) {
+        batch.update(doc.reference, {'status': TaskStatus.overdue.name});
+        for (final workerId in task.assignedWorkerIds) {
+          await sendNotification(AppNotification(
+            id: '',
+            userId: workerId,
+            title: 'Geciken görev',
+            body: task.title,
+            type: 'task_overdue',
+            taskId: task.id,
+          ));
+        }
+      }
+    }
+    await batch.commit();
+  }
+
+  Future<Map<String, dynamic>> getWorkerAnalytics() async {
+    final snap = await _db.collection('tasks').get();
+    final tasks = snap.docs.map((d) => WorkTask.fromMap(d.id, d.data())).toList();
+    final workerCompleted = <String, int>{};
+    final workerOverdue = <String, int>{};
+    final workerHours = <String, List<double>>{};
+
+    for (final t in tasks) {
+      for (final wId in t.assignedWorkerIds) {
+        if (t.status == TaskStatus.approved || t.status == TaskStatus.completed) {
+          workerCompleted[wId] = (workerCompleted[wId] ?? 0) + 1;
+          if (t.durationHours != null) {
+            workerHours.putIfAbsent(wId, () => []).add(t.durationHours!);
+          }
+        }
+        if (t.isOverdue) {
+          workerOverdue[wId] = (workerOverdue[wId] ?? 0) + 1;
+        }
+      }
+    }
+
+    String? fastestId;
+    double? fastestAvg;
+    workerHours.forEach((id, hours) {
+      final avg = hours.reduce((a, b) => a + b) / hours.length;
+      if (fastestAvg == null || avg < fastestAvg!) {
+        fastestAvg = avg;
+        fastestId = id;
+      }
+    });
+
+    String? mostDelayedId;
+    int maxOverdue = 0;
+    workerOverdue.forEach((id, overdueCount) {
+      if (overdueCount > maxOverdue) {
+        maxOverdue = overdueCount;
+        mostDelayedId = id;
+      }
+    });
+
+    return {
+      'fastestWorkerId': fastestId,
+      'mostDelayedWorkerId': mostDelayedId,
+      'workerCompleted': workerCompleted,
+    };
   }
 
   Future<void> rejectTask(String taskId, {String? note}) {
